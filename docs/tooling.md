@@ -12,11 +12,11 @@ Static analysis tool that catches code problems — unused variables, unsafe pat
 
 Three rule sets are active:
 
-| Plugin | Purpose |
-|---|---|
-| `@eslint/js` recommended | Core JS best practices |
-| `typescript-eslint` recommended | TypeScript-specific rules |
-| `eslint-config-prettier` | Disables ESLint rules that conflict with Prettier |
+| Plugin                          | Purpose                                           |
+| ------------------------------- | ------------------------------------------------- |
+| `@eslint/js` recommended        | Core JS best practices                            |
+| `typescript-eslint` recommended | TypeScript-specific rules                         |
+| `eslint-config-prettier`        | Disables ESLint rules that conflict with Prettier |
 
 Run manually:
 
