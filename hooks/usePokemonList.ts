@@ -29,6 +29,7 @@ export function usePokemonList(): Result {
   });
 
   useEffect(() => {
+    const controller = new AbortController();
     const isFirstPage = offset === 0;
 
     setState((prev) => ({
@@ -38,12 +39,14 @@ export function usePokemonList(): Result {
       error: null,
     }));
 
-    fetch(`https://pokeapi.co/api/v2/pokemon?limit=${LIMIT}&offset=${offset}`)
+    fetch(`https://pokeapi.co/api/v2/pokemon?limit=${LIMIT}&offset=${offset}`, {
+      signal: controller.signal,
+    })
       .then((res) => res.json() as Promise<PokemonListResponse>)
       .then(async (json) => {
         const detailed = await Promise.all(
           json.results.map(async (pokemon) => {
-            const detail = await fetch(pokemon.url).then(
+            const detail = await fetch(pokemon.url, { signal: controller.signal }).then(
               (r) => r.json() as Promise<PokemonDetailResponse>
             );
             const getStat = (name: string) =>
@@ -69,14 +72,17 @@ export function usePokemonList(): Result {
           count: json.count,
         }));
       })
-      .catch(() =>
+      .catch((err) => {
+        if (err.name === 'AbortError') return;
         setState((prev) => ({
           ...prev,
           loading: false,
           loadingMore: false,
           error: 'Failed to load Pokemon.',
-        }))
-      );
+        }));
+      });
+
+    return () => controller.abort();
   }, [offset]);
 
   const loadMore = useCallback(() => {
