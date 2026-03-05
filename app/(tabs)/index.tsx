@@ -1,6 +1,24 @@
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { usePokemonList } from '../../hooks/usePokemonList';
+import { Pokemon } from '../../types/pokemon';
+
+function navigateToDetail(item: Pokemon) {
+  router.push({
+    pathname: '/pokemon/[name]',
+    params: {
+      name: item.name,
+      hp: item.hp,
+      speed: item.speed,
+      attack: item.attack,
+      specialAttack: item.specialAttack,
+      defense: item.defense,
+      specialDefense: item.specialDefense,
+      types: item.types?.join(','),
+    },
+  });
+}
 
 export default function Index() {
   const { data, loading, loadingMore, error, hasMore, count, loadMore } = usePokemonList();
@@ -30,9 +48,9 @@ export default function Index() {
         keyExtractor={(item) => item.name}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
-          <View style={styles.item}>
+          <Pressable style={styles.item} onPress={() => navigateToDetail(item)}>
             <Text style={styles.name}>{item.name}</Text>
-          </View>
+          </Pressable>
         )}
         onEndReached={hasMore ? loadMore : undefined}
         onEndReachedThreshold={0.5}
