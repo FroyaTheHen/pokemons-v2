@@ -80,12 +80,9 @@ export function usePokemonList(): Result {
   }, [offset]);
 
   const loadMore = useCallback(() => {
-    setState((prev) => {
-      if (prev.loadingMore || !prev.hasMore) return prev;
-      return prev;
-    });
+    if (state.loadingMore || !state.hasMore) return;
     setOffset((prev) => prev + LIMIT);
-  }, []);
+  }, [state.loadingMore, state.hasMore]);
 
   return { ...state, loadMore };
 }
