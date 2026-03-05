@@ -51,6 +51,7 @@ export function usePokemonList(): Result {
             );
             const getStat = (name: string) =>
               detail.stats.find((s) => s.stat.name === name)?.base_stat;
+
             return {
               ...pokemon,
               hp: getStat('hp'),
@@ -60,6 +61,8 @@ export function usePokemonList(): Result {
               defense: getStat('defense'),
               specialDefense: getStat('special-defense'),
               types: detail.types.map((t) => t.type.name),
+              spriteSmall: detail.sprites.front_default,
+              spriteFull: detail.sprites.other.dream_world.front_default,
             };
           })
         );
