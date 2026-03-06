@@ -1,5 +1,6 @@
 import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -9,8 +10,11 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <Stack>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-    </Stack>
+    <SafeAreaProvider>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="pokemon/[name]" options={{ title: 'Pokemon Detail' }} />
+      </Stack>
+    </SafeAreaProvider>
   );
 }

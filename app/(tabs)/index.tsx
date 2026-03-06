@@ -1,26 +1,90 @@
-import { Text, View, StyleSheet } from 'react-native';
+import { router } from 'expo-router';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+
+import { usePokemonList } from '../../hooks/usePokemonList';
+import { Pokemon } from '../../types/pokemon';
+
+function navigateToDetail(item: Pokemon) {
+  router.push({
+    pathname: '/pokemon/[name]',
+    params: {
+      name: item.name,
+      hp: item.hp,
+      speed: item.speed,
+      attack: item.attack,
+      specialAttack: item.specialAttack,
+      defense: item.defense,
+      specialDefense: item.specialDefense,
+      types: item.types?.join(','),
+    },
+  });
+}
 
 export default function Index() {
+  const { data, loading, loadingMore, error, hasMore, count, loadMore } = usePokemonList();
+
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centered}>
+        <Text>{error}</Text>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Home screen</Text>
+    <View>
+      <Text style={styles.count}>{count} pokemons found</Text>
+
+      <FlatList
+        data={data}
+        keyExtractor={(item) => item.name}
+        contentContainerStyle={styles.list}
+        renderItem={({ item }) => (
+          <Pressable style={styles.item} onPress={() => navigateToDetail(item)}>
+            <Text style={styles.name}>{item.name}</Text>
+          </Pressable>
+        )}
+        onEndReached={hasMore ? loadMore : undefined}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={loadingMore ? <ActivityIndicator style={styles.footer} /> : null}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  centered: {
     flex: 1,
-    backgroundColor: '#7badea',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  text: {
-    color: '#fff',
+  list: {
+    padding: 16,
   },
-  button: {
-    fontSize: 20,
-    textDecorationLine: 'underline',
-    color: '#fff',
+  item: {
+    padding: 16,
+    marginBottom: 8,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+  },
+  name: {
+    fontSize: 16,
+    textTransform: 'capitalize',
+    fontWeight: 'bold',
+  },
+  footer: {
+    paddingVertical: 16,
+  },
+  count: {
+    textAlign: 'right',
+    paddingRight: 16,
   },
 });
