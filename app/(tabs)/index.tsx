@@ -24,7 +24,6 @@ function navigateToDetail(item: Pokemon) {
 
 export default function Index() {
   const { data, loading, loadingMore, error, hasMore, count, loadMore } = usePokemonList();
-
   if (loading) {
     return (
       <View style={styles.centered}>
