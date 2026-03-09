@@ -1,6 +1,11 @@
 import { Text, View, StyleSheet } from 'react-native';
+import { useIsDark } from '../../contexts/ThemeContext';
+import React, { useMemo } from 'react';
 
 export default function CameraScreen() {
+  const isDark = useIsDark();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
+
   return (
     <View style={styles.container}>
       <Text style={styles.text}>Camera screen</Text>
@@ -8,14 +13,16 @@ export default function CameraScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#c9b751',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  text: {
-    color: '#fff',
-  },
-});
+const createStyles = (isDark: boolean) => {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: isDark ? '#121212' : '#ffffff',
+    },
+    text: {
+      color: isDark ? '#ffffff' : '#000000',
+    },
+  });
+};

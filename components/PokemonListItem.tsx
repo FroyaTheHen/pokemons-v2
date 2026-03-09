@@ -2,6 +2,8 @@ import { Pressable, StyleSheet, Text, View, Image } from 'react-native';
 
 import { Pokemon } from '../types/pokemon';
 import { PokemonType } from './PokemonType';
+import { useIsDark } from '../contexts/ThemeContext';
+import React, { useMemo } from 'react';
 
 type Props = {
   item: Pokemon;
@@ -9,11 +11,14 @@ type Props = {
 };
 
 export function PokemonListItem({ item, onPress }: Props) {
+  const isDark = useIsDark();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
+
   return (
     <Pressable style={styles.container} onPress={onPress}>
       <Image source={{ uri: item.spriteSmall }} style={styles.image} />
 
-      <View style={styles.name}>
+      <View style={styles.nameWrapper}>
         <Text style={styles.name}>{item.name}</Text>
       </View>
 
@@ -26,28 +31,33 @@ export function PokemonListItem({ item, onPress }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    marginBottom: 8,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    gap: 12,
-  },
-  image: {
-    width: 60,
-    height: 60,
-  },
-  name: {
-    flex: 1,
-    fontSize: 16,
-    textTransform: 'capitalize',
-    fontWeight: 'bold',
-  },
-  types: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-});
+const createStyles = (isDark: boolean) => {
+  return StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 12,
+      marginBottom: 8,
+      borderRadius: 8,
+      gap: 12,
+      backgroundColor: isDark ? '#1e1e1e' : '#ffffff',
+    },
+    image: {
+      width: 60,
+      height: 60,
+    },
+    nameWrapper: {
+      flex: 1,
+    },
+    name: {
+      fontSize: 16,
+      textTransform: 'capitalize',
+      fontWeight: 'bold',
+      color: isDark ? '#ffffff' : '#000000',
+    },
+    types: {
+      flexDirection: 'row',
+      gap: 4,
+    },
+  });
+};

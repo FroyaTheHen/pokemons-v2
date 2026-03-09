@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type ThemeContextType = {
@@ -28,4 +28,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   };
 
   return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
+}
+
+export function useIsDark() {
+  const themeContext = useContext(ThemeContext);
+  return themeContext?.theme === 'dark';
 }

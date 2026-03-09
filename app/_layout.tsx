@@ -8,11 +8,13 @@ import { router } from 'expo-router';
 import settings from '../assets/icons/settings.png';
 
 function HeaderLogo() {
+  const { theme } = useContext(ThemeContext)!;
+  const isDark = theme === 'dark';
   return (
     <View style={styles.row}>
       <Image source={pokemonLogo} style={styles.headerImage} resizeMode="contain" />
       <Pressable onPress={() => navigateToSettings()}>
-        <View style={styles.iconWrapper}>
+        <View style={[styles.iconWrapper, { backgroundColor: isDark ? '#6a6a6a' : '#d4d5d7' }]}>
           <Image source={settings} style={styles.icon} />
         </View>
       </Pressable>
@@ -41,7 +43,7 @@ export default function RootLayout() {
 
 function AppNavigator() {
   const { theme } = useContext(ThemeContext)!;
-  const bg = theme === 'dark' ? '#121212' : '#ffffff';
+  const bg = theme === 'dark' ? '#1e1e1e' : '#ffffff';
 
   return (
     <Stack
@@ -67,7 +69,6 @@ const styles = StyleSheet.create({
     paddingVertical: 50,
   },
   iconWrapper: {
-    backgroundColor: '#d4d5d7',
     borderRadius: 25,
     padding: 10,
   },

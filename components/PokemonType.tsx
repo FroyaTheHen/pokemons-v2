@@ -1,5 +1,7 @@
 import { PokeType } from '../types/pokemon';
 import { View, Text, StyleProp, TextStyle, StyleSheet } from 'react-native';
+import { useIsDark } from '../contexts/ThemeContext';
+import React, { useMemo } from 'react';
 
 const typeColors: Record<PokeType, StyleProp<TextStyle>> = {
   normal: { backgroundColor: '#9E9E9E' },
@@ -24,39 +26,47 @@ const typeColors: Record<PokeType, StyleProp<TextStyle>> = {
 
 export function PokemonType({ t }: { t: string }) {
   const dynamicStyle = typeColors[t as PokeType] || {};
-
   return <View style={[styles.typeCircle, dynamicStyle]}></View>;
 }
 
 export function PokemonTypeDetail({ t }: { t: string }) {
   const dynamicStyle = typeColors[t as PokeType] || {};
+
+  const isDark = useIsDark();
+  const themeStyles = useMemo(() => createStyles(isDark), [isDark]);
+
   return (
-    <View style={styles.typePill}>
+    <View style={themeStyles.typePill}>
       <View style={[styles.typeCircle, dynamicStyle]} />
-      <Text style={styles.typeLabel}>{t}</Text>
+      <Text style={themeStyles.typeLabel}>{t}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  typePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#E0E0E0',
-    borderRadius: 999,
-    paddingVertical: 4,
-    paddingHorizontal: 5,
-    alignSelf: 'flex-start',
-  },
   typeCircle: {
     width: 20,
     height: 20,
     borderRadius: 10,
   },
-  typeLabel: {
-    fontSize: 13,
-    textTransform: 'capitalize',
-    color: '#333',
-  },
 });
+
+const createStyles = (isDark: boolean) => {
+  return StyleSheet.create({
+    typePill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      borderRadius: 999,
+      paddingVertical: 4,
+      paddingHorizontal: 5,
+      alignSelf: 'flex-start',
+      backgroundColor: isDark ? '#333333' : '#E0E0E0',
+    },
+    typeLabel: {
+      fontSize: 13,
+      textTransform: 'capitalize',
+      color: isDark ? '#eeeeee' : '#333333',
+    },
+  });
+};
