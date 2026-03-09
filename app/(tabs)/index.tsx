@@ -4,6 +4,8 @@ import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-nativ
 import { usePokemonList } from '../../hooks/usePokemonList';
 import { Pokemon } from '../../types/pokemon';
 import { PokemonListItem } from '../../components/PokemonListItem';
+import { useIsDark } from '../../contexts/ThemeContext';
+import React, { useMemo } from 'react';
 
 function navigateToDetail(item: Pokemon) {
   router.push({
@@ -24,6 +26,8 @@ function navigateToDetail(item: Pokemon) {
 
 export default function Index() {
   const { data, loading, loadingMore, error, hasMore, count, loadMore } = usePokemonList();
+  const theme = useIsDark();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   if (loading) {
     return (
@@ -42,9 +46,11 @@ export default function Index() {
   }
 
   return (
-    <View>
-      <Text style={styles.count}>{count} pokemons found</Text>
-
+    <View style={styles.root}>
+      <View style={styles.row}>
+        <Text style={styles.name}> Pokedex </Text>
+        <Text style={styles.count}>{count} pokemons found</Text>
+      </View>
       <FlatList
         data={data}
         keyExtractor={(item) => item.name}
@@ -60,31 +66,47 @@ export default function Index() {
   );
 }
 
-const styles = StyleSheet.create({
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  list: {
-    padding: 16,
-  },
-  item: {
-    padding: 16,
-    marginBottom: 8,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-  },
-  name: {
-    fontSize: 16,
-    textTransform: 'capitalize',
-    fontWeight: 'bold',
-  },
-  footer: {
-    paddingVertical: 16,
-  },
-  count: {
-    textAlign: 'right',
-    paddingRight: 16,
-  },
-});
+const createStyles = (isDark: boolean) => {
+  const bg = isDark ? '#121212' : '#f2f2f2';
+  const text = isDark ? '#ffffff' : '#000000';
+  return StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: bg,
+    },
+    centered: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: bg,
+    },
+    list: {
+      padding: 16,
+    },
+    item: {
+      padding: 16,
+      marginBottom: 8,
+      backgroundColor: isDark ? '#1e1e1e' : '#ffffff',
+      borderRadius: 8,
+    },
+    name: {
+      fontSize: 16,
+      textTransform: 'capitalize',
+      fontWeight: 'bold',
+      color: text,
+    },
+    footer: {
+      paddingVertical: 16,
+    },
+    count: {
+      textAlign: 'right',
+      paddingRight: 16,
+      color: isDark ? '#aaaaaa' : '#333333',
+    },
+    row: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      padding: 16,
+    },
+  });
+};

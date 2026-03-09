@@ -1,13 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  ImageSourcePropType,
-  StyleProp,
-  ViewStyle,
-} from 'react-native';
+import { ScrollView, StyleSheet, Text, View, ImageSourcePropType } from 'react-native';
 import { PokemonTypeDetail } from '../../components/PokemonType';
 import { Image as ExpoImage } from 'expo-image';
 import { Image as ReactNativeImage } from 'react-native';
@@ -15,20 +7,23 @@ import statHeart from '../../assets/icons/stat-hearth.png';
 import shape from '../../assets/icons/shape.png';
 import statShield from '../../assets/icons/stat-shield.png';
 import statTargetAlt from '../../assets/icons/stat-target-alt.png';
+import { useIsDark } from '../../contexts/ThemeContext';
+import React, { useMemo } from 'react';
 
 type StatRowProps = {
   label: string;
   value?: string | number;
   icon: ImageSourcePropType;
-  additionalStyle: StyleProp<ViewStyle>;
+  underline: boolean;
+  themeStyle: ReturnType<typeof createStyles>;
 };
 
-function StatRow({ label, value, icon, additionalStyle }: StatRowProps) {
+function StatRow({ label, value, icon, underline, themeStyle }: StatRowProps) {
   return (
-    <View style={[styles.row, additionalStyle]}>
-      <Text style={styles.label}>{label}</Text>
+    <View style={[styles.row, underline ? themeStyle.rowUnderlined : {}]}>
+      <Text style={themeStyle.label}>{label}</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <Text style={styles.value}>{value ?? '—'}</Text>
+        <Text style={themeStyle.value}>{value ?? '—'}</Text>
         <ReactNativeImage source={icon} style={styles.icon} />
       </View>
     </View>
@@ -49,9 +44,12 @@ export default function PokemonDetail() {
       spriteFull: string;
     }>();
 
+  const isDark = useIsDark();
+  const themeStyle = useMemo(() => createStyles(isDark), [isDark]);
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>{name}</Text>
+      <Text style={[themeStyle.title]}>{name}</Text>
 
       <View style={styles.typeRow}>
         {types?.split(',').map((t) => (
@@ -64,26 +62,41 @@ export default function PokemonDetail() {
       </View>
 
       <View style={styles.section}>
-        <StatRow label="HP" value={hp} icon={statHeart} additionalStyle={styles.empty} />
-        <StatRow label="Speed" value={speed} icon={shape} additionalStyle={styles.rowUnderlined} />
+        <StatRow label="HP" value={hp} icon={statHeart} underline={false} themeStyle={themeStyle} />
+        <StatRow
+          label="Speed"
+          value={speed}
+          icon={shape}
+          underline={true}
+          themeStyle={themeStyle}
+        />
         <StatRow
           label="Attack"
           value={attack}
           icon={statTargetAlt}
-          additionalStyle={styles.empty}
+          underline={false}
+          themeStyle={themeStyle}
         />
         <StatRow
           label="Special Attack"
           value={specialAttack}
           icon={statTargetAlt}
-          additionalStyle={styles.rowUnderlined}
+          underline={true}
+          themeStyle={themeStyle}
         />
-        <StatRow label="Defense" value={defense} icon={statShield} additionalStyle={styles.empty} />
+        <StatRow
+          label="Defense"
+          value={defense}
+          icon={statShield}
+          underline={false}
+          themeStyle={themeStyle}
+        />
         <StatRow
           label="Special Defense"
           value={specialDefense}
           icon={statShield}
-          additionalStyle={styles.empty}
+          underline={false}
+          themeStyle={themeStyle}
         />
       </View>
     </ScrollView>
@@ -91,15 +104,12 @@ export default function PokemonDetail() {
 }
 
 const styles = StyleSheet.create({
+  icon: {
+    width: 24,
+    height: 24,
+  },
   container: {
     padding: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    textTransform: 'capitalize',
-    marginBottom: 20,
-    textAlign: 'center',
   },
   section: {
     marginBottom: 24,
@@ -113,32 +123,41 @@ const styles = StyleSheet.create({
     width: 150,
     height: 150,
     alignSelf: 'center',
-    paddingVertical: 120,
+    marginVertical: 20,
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingVertical: 10,
   },
-  rowUnderlined: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#d4d5d7',
-  },
-  empty: {},
-  label: {
-    fontSize: 15,
-    color: '#000000',
-    fontWeight: '500',
-  },
-  value: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#111827',
-    width: 24,
-    height: 24,
-  },
-  icon: {
-    width: 24,
-    height: 24,
-  },
 });
+
+const createStyles = (isDark: boolean) => {
+  const textColor = isDark ? '#ffffff' : '#000000';
+  const separatorColor = isDark ? '#444444' : '#d4d5d7';
+
+  return StyleSheet.create({
+    value: {
+      fontSize: 15,
+      fontWeight: '500',
+      color: textColor,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: 'bold',
+      textTransform: 'capitalize',
+      marginBottom: 20,
+      textAlign: 'center',
+      color: textColor,
+    },
+    label: {
+      fontSize: 15,
+      fontWeight: '500',
+      color: textColor,
+    },
+    rowUnderlined: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: separatorColor,
+    },
+  });
+};
