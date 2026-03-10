@@ -44,7 +44,6 @@ export default function Index() {
       </View>
     );
   }
-
   return (
     <View style={styles.root}>
       <View style={styles.row}>
