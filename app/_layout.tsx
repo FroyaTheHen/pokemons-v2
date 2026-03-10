@@ -7,6 +7,7 @@ import { ThemeContext, ThemeProvider } from '../contexts/ThemeContext';
 import { router } from 'expo-router';
 import settings from '../assets/icons/settings.png';
 import { PokmemonProvider } from '../contexts/FavouriteContext';
+import { PinProvider } from '../contexts/PinContext';
 
 function AppHeader() {
   const { theme } = useContext(ThemeContext)!;
@@ -45,7 +46,9 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ThemeProvider>
         <PokmemonProvider>
-          <AppNavigator />
+          <PinProvider>
+            <AppNavigator />
+          </PinProvider>
         </PokmemonProvider>
       </ThemeProvider>
     </SafeAreaProvider>
