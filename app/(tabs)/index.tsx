@@ -1,6 +1,8 @@
 import { router } from 'expo-router';
 import { ActivityIndicator, FlatList, StyleSheet, Text, View, Pressable } from 'react-native';
 import { Image } from 'expo-image';
+import { Image as RNImage } from 'react-native';
+import heartSolid from '../../assets/icons/heart-solid.png';
 import { useContext } from 'react';
 import { usePokemonList } from '../../hooks/usePokemonList';
 import { Pokemon } from '../../types/pokemon';
@@ -38,8 +40,13 @@ function FavouritePokemon() {
   return (
     <View style={styles.favouriteWrapper}>
       <View style={styles.favouritePokemon}>
-        <View style={styles.favouriteImageWrapper}>
-          <Image source={{ uri: pokemon.spriteFull }} style={styles.favouriteImage} />
+        <View style={styles.favouriteImageContainer}>
+          <View style={styles.favouriteImageWrapper}>
+            <Image source={{ uri: pokemon.spriteFull }} style={styles.favouriteImage} />
+          </View>
+          <View style={[styles.heartBadge, { backgroundColor: isDark ? '#F1C242' : '#F6D98A' }]}>
+            <RNImage source={heartSolid} style={styles.heartBadgeIcon} />
+          </View>
         </View>
 
         <View style={styles.nameWrapper}>
@@ -199,6 +206,23 @@ const createStyles = (isDark: boolean) => {
     image: {
       width: 60,
       height: 60,
+    },
+    favouriteImageContainer: {
+      position: 'relative',
+    },
+    heartBadge: {
+      position: 'absolute',
+      top: -6,
+      right: -6,
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    heartBadgeIcon: {
+      width: 22,
+      height: 22,
     },
     favouriteImageWrapper: {
       width: 90,
