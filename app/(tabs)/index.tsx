@@ -108,14 +108,16 @@ export default function Index() {
       <View style={styles.pokeListContainer}>
         <View style={styles.row}>
           <Text style={styles.name}> Pokedex </Text>
-          <Text style={styles.count}>{count} pokemons found</Text>
+          <Text style={styles.count}>
+            {data.length} / {count} pokemons
+          </Text>
         </View>
         <FlatList
           data={data}
           keyExtractor={(item) => item.name}
           contentContainerStyle={styles.list}
-          renderItem={({ item }) => (
-            <PokemonListItem item={item} onPress={() => navigateToDetail(item)} />
+          renderItem={({ item, index }) => (
+            <PokemonListItem item={item} index={index} onPress={() => navigateToDetail(item)} />
           )}
           onEndReached={hasMore ? loadMore : undefined}
           onEndReachedThreshold={0.5}
