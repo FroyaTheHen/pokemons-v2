@@ -6,18 +6,21 @@ import pokemonLogo from '../assets/pokemon-logo.png';
 import { ThemeContext, ThemeProvider } from '../contexts/ThemeContext';
 import { router } from 'expo-router';
 import settings from '../assets/icons/settings.png';
+import { PokmemonProvider } from '../contexts/FavouriteContext';
 
 function HeaderLogo() {
   const { theme } = useContext(ThemeContext)!;
   const isDark = theme === 'dark';
   return (
-    <View style={styles.row}>
-      <Image source={pokemonLogo} style={styles.headerImage} resizeMode="contain" />
-      <Pressable onPress={() => navigateToSettings()}>
-        <View style={[styles.iconWrapper, { backgroundColor: isDark ? '#6a6a6a' : '#d4d5d7' }]}>
-          <Image source={settings} style={styles.icon} />
-        </View>
-      </Pressable>
+    <View>
+      <View style={styles.row}>
+        <Image source={pokemonLogo} style={styles.headerImage} resizeMode="contain" />
+        <Pressable onPress={() => navigateToSettings()}>
+          <View style={[styles.iconWrapper, { backgroundColor: isDark ? '#6a6a6a' : '#d4d5d7' }]}>
+            <Image source={settings} style={styles.icon} />
+          </View>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -35,7 +38,9 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <AppNavigator />
+        <PokmemonProvider>
+          <AppNavigator />
+        </PokmemonProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );
@@ -80,5 +85,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  favText: {
+    fontSize: 12,
+    color: '#888888',
   },
 });

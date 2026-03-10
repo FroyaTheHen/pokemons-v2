@@ -14,6 +14,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "^54.0.0",
     "expo-constants": "~18.0.13",
     "expo-dev-client": "~6.0.20",

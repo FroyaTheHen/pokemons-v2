@@ -8,9 +8,10 @@ import React, { useMemo } from 'react';
 type Props = {
   item: Pokemon;
   onPress: () => void;
+  index: number;
 };
 
-export function PokemonListItem({ item, onPress }: Props) {
+export function PokemonListItem({ item, onPress, index }: Props) {
   const isDark = useIsDark();
   const styles = useMemo(() => createStyles(isDark), [isDark]);
 
@@ -20,6 +21,7 @@ export function PokemonListItem({ item, onPress }: Props) {
 
       <View style={styles.nameWrapper}>
         <Text style={styles.name}>{item.name}</Text>
+        <Text style={styles.index}>{index + 1}</Text>
       </View>
 
       <View style={styles.types}>
@@ -54,6 +56,11 @@ const createStyles = (isDark: boolean) => {
       textTransform: 'capitalize',
       fontWeight: 'bold',
       color: isDark ? '#ffffff' : '#000000',
+    },
+    index: {
+      fontSize: 12,
+      color: isDark ? '#aaaaaa' : '#888888',
+      marginTop: 2,
     },
     types: {
       flexDirection: 'row',

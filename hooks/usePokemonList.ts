@@ -66,14 +66,19 @@ export function usePokemonList(): Result {
             };
           })
         );
-        setState((prev) => ({
-          data: isFirstPage ? detailed : [...prev.data, ...detailed],
-          loading: false,
-          loadingMore: false,
-          error: null,
-          hasMore: json.next !== null,
-          count: json.count,
-        }));
+        setState((prev) => {
+          const existingNames = new Set(prev.data.map((p) => p.name));
+          return {
+            data: isFirstPage
+              ? detailed
+              : [...prev.data, ...detailed.filter((p) => !existingNames.has(p.name))],
+            loading: false,
+            loadingMore: false,
+            error: null,
+            hasMore: json.next !== null,
+            count: json.count,
+          };
+        });
       })
       .catch((err) => {
         if (err.name === 'AbortError') return;
