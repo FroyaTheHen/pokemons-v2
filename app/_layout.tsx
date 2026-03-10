@@ -1,21 +1,12 @@
 import { SplashScreen, Stack } from 'expo-router';
 import { useContext, useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { Image, StyleSheet, View, Pressable, Text } from 'react-native';
+import { Image, StyleSheet, View, Pressable } from 'react-native';
 import pokemonLogo from '../assets/pokemon-logo.png';
 import { ThemeContext, ThemeProvider } from '../contexts/ThemeContext';
 import { router } from 'expo-router';
 import settings from '../assets/icons/settings.png';
-import { PokemonContext, PokmemonProvider } from '../contexts/FavouriteContext';
-
-function FavouritePokemon() {
-  const context = useContext(PokemonContext);
-  if (!context?.pokemon) {
-    return <Text style={styles.favText}>No Pokemon loaded yet...</Text>;
-  }
-  const { pokemon } = context;
-  return <Text style={styles.favText}>Fav: {pokemon.name}</Text>;
-}
+import { PokmemonProvider } from '../contexts/FavouriteContext';
 
 function HeaderLogo() {
   const { theme } = useContext(ThemeContext)!;
@@ -30,7 +21,6 @@ function HeaderLogo() {
           </View>
         </Pressable>
       </View>
-      <FavouritePokemon />
     </View>
   );
 }
