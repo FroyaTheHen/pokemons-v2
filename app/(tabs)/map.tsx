@@ -21,6 +21,8 @@ import { usePokemonList } from '../../hooks/usePokemonList';
 import { Pokemon } from '../../types/pokemon';
 import { ImageRef, useImage } from 'expo-image';
 
+const COORD_THRESHOLD = 0.001;
+
 function PinImageLoader({
   url,
   onLoad,
@@ -67,8 +69,6 @@ export default function MapScreen() {
       zoom: cameraRef.current.zoom,
     });
   };
-
-  const COORD_THRESHOLD = 0.001;
 
   const handleMapClick = (event: { coordinates: { latitude?: number; longitude?: number } }) => {
     const { latitude, longitude } = event.coordinates;
@@ -165,7 +165,9 @@ export default function MapScreen() {
                     });
                   }}
                 >
-                  <Image source={{ uri: pin.pokemon.spriteSmall }} style={styles.pinImage} />
+                  {pin.pokemon.spriteSmall ? (
+                    <Image source={{ uri: pin.pokemon.spriteSmall }} style={styles.pinImage} />
+                  ) : null}
                   <Text>{index + 1}. </Text>
                   <Text style={styles.pinChipText} numberOfLines={1}>
                     {pin.pokemon.name}
@@ -226,7 +228,7 @@ export default function MapScreen() {
                         },
                       ]}
                     >
-                      {index} {item.name}
+                      {index + 1} {item.name}
                     </Text>
                   </Pressable>
                 )}
@@ -291,6 +293,7 @@ export default function MapScreen() {
       </View>
     );
   } else if (Platform.OS === 'android') {
+    // TODO
     return <GoogleMaps.View style={{ flex: 1 }} />;
   } else {
     return <Text>Maps are only available on Android and iOS</Text>;
@@ -402,13 +405,6 @@ const createStyles = (isDark: boolean) => {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
-      marginBottom: 16,
-    },
-    input: {
-      borderRadius: 10,
-      paddingHorizontal: 14,
-      paddingVertical: 12,
-      fontSize: 16,
       marginBottom: 16,
     },
     buttonRow: {

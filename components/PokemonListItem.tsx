@@ -11,7 +11,7 @@ type Props = {
   index: number;
 };
 
-export function PokemonTypes(pokemon: Pokemon) {
+export function PokemonTypes({ types }: Pick<Pokemon, 'types'>) {
   return (
     <View
       style={[
@@ -21,7 +21,7 @@ export function PokemonTypes(pokemon: Pokemon) {
         },
       ]}
     >
-      {pokemon.types?.map((t) => (
+      {types?.map((t) => (
         <PokemonType key={t} t={t} />
       ))}
     </View>
