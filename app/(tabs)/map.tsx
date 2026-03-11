@@ -1,5 +1,5 @@
 import { Text, StyleSheet, Platform, View, TouchableOpacity } from 'react-native';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AppleMaps, GoogleMaps } from 'expo-maps';
 import type { AppleMapsViewType } from 'expo-maps/src/apple/AppleMaps.types';
 import { usePins, MapPin } from '../../contexts/PinContext';
@@ -9,11 +9,13 @@ import { PinImageLoader } from '../../components/map/PinImageLoader';
 import { NewPinSheet } from '../../components/map/NewPinSheet';
 import { PinDetailSheet } from '../../components/map/PinDetailSheet';
 import { PinChipList } from '../../components/map/PinChipList';
+import { useUserLocation } from '../../hooks/useUserLocation';
 
 const COORD_THRESHOLD = 0.001;
 const ZOOM_DEFAULT = 12;
 
 export default function MapScreen() {
+  const { location } = useUserLocation();
   const mapRef = useRef<AppleMapsViewType>(null);
   const cameraRef = useRef({ latitude: 50.047704, longitude: 19.95814, zoom: ZOOM_DEFAULT });
   const [selectedPin, setSelectedPin] = useState<MapPin | null>(null);
@@ -23,6 +25,18 @@ export default function MapScreen() {
   } | null>(null);
   const [pinImageRefs, setPinImageRefs] = useState<Map<string, ImageRef>>(new Map());
   const { pins, addPin, removePin } = usePins();
+
+  useEffect(() => {
+    if (location) {
+      mapRef.current?.setCameraPosition({
+        coordinates: {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        },
+        zoom: ZOOM_DEFAULT,
+      });
+    }
+  }, [location]);
 
   const handleImageLoad = useCallback((url: string, ref: ImageRef) => {
     setPinImageRefs((prev) => new Map(prev).set(url, ref));
