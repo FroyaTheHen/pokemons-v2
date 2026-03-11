@@ -183,14 +183,12 @@ export default function MapScreen() {
           animationType="slide"
           onRequestClose={() => setPendingCoords(null)}
         >
-          <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+          <KeyboardAvoidingView style={styles.flex} behavior="padding">
             <Pressable style={styles.modalBackdrop} onPress={() => setPendingCoords(null)} />
-            <View style={[styles.bottomSheet, { backgroundColor: isDark ? '#1e1e1e' : '#ffffff' }]}>
+            <View style={styles.bottomSheet}>
               <View style={styles.sheetHandle} />
-              <Text style={[styles.sheetTitle, { color: isDark ? '#ffffff' : '#000000' }]}>
-                New Pin
-              </Text>
-              <Text style={[styles.sheetCoords, { color: isDark ? '#aaaaaa' : '#666666' }]}>
+              <Text style={styles.sheetTitle}>New Pin</Text>
+              <Text style={styles.sheetCoords}>
                 {pendingCoords?.latitude.toFixed(5)}, {pendingCoords?.longitude.toFixed(5)}
               </Text>
               <FlatList
@@ -238,17 +236,13 @@ export default function MapScreen() {
                   style={[styles.actionButton, styles.cancelButton]}
                   onPress={() => setPendingCoords(null)}
                 >
-                  <Text
-                    style={[styles.actionButtonText, { color: isDark ? '#ffffff' : '#000000' }]}
-                  >
-                    Cancel
-                  </Text>
+                  <Text style={[styles.actionButtonText, styles.cancelButtonText]}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.actionButton, styles.saveButton]}
                   onPress={handleSavePin}
                 >
-                  <Text style={[styles.actionButtonText, { color: '#ffffff' }]}>Save</Text>
+                  <Text style={[styles.actionButtonText, styles.primaryButtonText]}>Save</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -263,28 +257,16 @@ export default function MapScreen() {
           onRequestClose={() => setSelectedPin(null)}
         >
           <Pressable style={styles.modalBackdrop} onPress={() => setSelectedPin(null)} />
-          <View style={[styles.bottomSheet, { backgroundColor: isDark ? '#1e1e1e' : '#ffffff' }]}>
+          <View style={styles.bottomSheet}>
             <View style={styles.sheetHandle} />
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+            <View style={styles.pinDetailRow}>
               <Image
                 source={{ uri: selectedPin?.pokemon.spriteSmall }}
                 style={styles.pinDetailImage}
               />
               <View>
-                <Text
-                  style={[
-                    styles.sheetTitle,
-                    { color: isDark ? '#ffffff' : '#000000', marginBottom: 4 },
-                  ]}
-                >
-                  {selectedPin?.pokemon.name}
-                </Text>
-                <Text
-                  style={[
-                    styles.sheetCoords,
-                    { color: isDark ? '#aaaaaa' : '#666666', marginBottom: 0 },
-                  ]}
-                >
+                <Text style={styles.sheetTitle}>{selectedPin?.pokemon.name}</Text>
+                <Text style={[styles.sheetCoords, styles.sheetCoordsCompact]}>
                   {selectedPin?.coordinates.latitude.toFixed(5)},{' '}
                   {selectedPin?.coordinates.longitude.toFixed(5)}
                 </Text>
@@ -295,15 +277,13 @@ export default function MapScreen() {
                 style={[styles.actionButton, styles.cancelButton]}
                 onPress={() => setSelectedPin(null)}
               >
-                <Text style={[styles.actionButtonText, { color: isDark ? '#ffffff' : '#000000' }]}>
-                  Cancel
-                </Text>
+                <Text style={[styles.actionButtonText, styles.cancelButtonText]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.actionButton, styles.deleteButton]}
                 onPress={handleDeletePin}
               >
-                <Text style={[styles.actionButtonText, { color: '#ffffff' }]}>Remove Pin</Text>
+                <Text style={[styles.actionButtonText, styles.primaryButtonText]}>Remove Pin</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -320,6 +300,7 @@ export default function MapScreen() {
 const createStyles = (isDark: boolean) => {
   return StyleSheet.create({
     container: { flex: 1 },
+    flex: { flex: 1 },
     map: { width: '100%', height: '100%' },
     buttonContainer: {
       position: 'absolute',
@@ -388,6 +369,7 @@ const createStyles = (isDark: boolean) => {
       paddingTop: 12,
       borderTopLeftRadius: 16,
       borderTopRightRadius: 16,
+      backgroundColor: isDark ? '#1e1e1e' : '#ffffff',
       shadowColor: '#000',
       shadowOffset: { width: 0, height: -2 },
       shadowOpacity: 0.1,
@@ -406,9 +388,20 @@ const createStyles = (isDark: boolean) => {
       fontWeight: '600',
       marginBottom: 6,
       textTransform: 'capitalize',
+      color: isDark ? '#ffffff' : '#000000',
     },
     sheetCoords: {
       fontSize: 14,
+      marginBottom: 16,
+      color: isDark ? '#aaaaaa' : '#666666',
+    },
+    sheetCoordsCompact: {
+      marginBottom: 0,
+    },
+    pinDetailRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
       marginBottom: 16,
     },
     input: {
@@ -428,15 +421,18 @@ const createStyles = (isDark: boolean) => {
       paddingVertical: 14,
       alignItems: 'center',
     },
-    cancelButton: {
-      backgroundColor: isDark ? '#2c2c2e' : '#f2f2f7',
-    },
-    saveButton: {
-      backgroundColor: '#007AFF',
-    },
     actionButtonText: {
       fontSize: 16,
       fontWeight: '600',
+    },
+    cancelButton: {
+      backgroundColor: isDark ? '#2c2c2e' : '#f2f2f7',
+    },
+    cancelButtonText: {
+      color: isDark ? '#ffffff' : '#000000',
+    },
+    saveButton: {
+      backgroundColor: '#007AFF',
     },
     deleteButton: {
       backgroundColor: '#FF3B30',
@@ -444,10 +440,8 @@ const createStyles = (isDark: boolean) => {
       paddingVertical: 14,
       alignItems: 'center',
     },
-    deleteButtonText: {
+    primaryButtonText: {
       color: '#ffffff',
-      fontSize: 16,
-      fontWeight: '600',
     },
     pokemonList: {
       maxHeight: 200,
