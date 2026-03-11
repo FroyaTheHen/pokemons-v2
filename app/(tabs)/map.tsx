@@ -47,14 +47,19 @@ export default function MapScreen() {
   const handleMapClick = (event: { coordinates: { latitude?: number; longitude?: number } }) => {
     const { latitude, longitude } = event.coordinates;
     if (latitude == null || longitude == null) return;
+
+    const dynamicThreshold = COORD_THRESHOLD * (50 / cameraRef.current.zoom);
     const nearbyPin = pins.find(
       (p) =>
-        Math.abs(p.coordinates.latitude - latitude) < COORD_THRESHOLD &&
-        Math.abs(p.coordinates.longitude - longitude) < COORD_THRESHOLD
+        Math.abs(p.coordinates.latitude - latitude) < dynamicThreshold &&
+        Math.abs(p.coordinates.longitude - longitude) < dynamicThreshold
     );
     if (nearbyPin) {
       setSelectedPin(nearbyPin);
-      mapRef.current?.setCameraPosition({ coordinates: nearbyPin.coordinates, zoom: ZOOM_DEFAULT });
+
+      const dynamicZoom =
+        cameraRef.current.zoom > ZOOM_DEFAULT ? cameraRef.current.zoom : ZOOM_DEFAULT;
+      mapRef.current?.setCameraPosition({ coordinates: nearbyPin.coordinates, zoom: dynamicZoom });
       return;
     }
     setPendingCoords({ latitude, longitude });
