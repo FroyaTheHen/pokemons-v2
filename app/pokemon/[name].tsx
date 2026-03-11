@@ -94,7 +94,7 @@ export default function PokemonDetail() {
       </View>
 
       <View style={styles.section}>
-        <ExpoImage source={{ uri: spriteFull }} style={styles.image} />
+        <ExpoImage source={{ uri: spriteFull }} style={styles.image} contentFit="contain" />
       </View>
 
       <View style={styles.section}>

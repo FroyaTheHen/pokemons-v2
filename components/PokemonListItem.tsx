@@ -11,6 +11,23 @@ type Props = {
   index: number;
 };
 
+export function PokemonTypes({ types }: Pick<Pokemon, 'types'>) {
+  return (
+    <View
+      style={[
+        {
+          flexDirection: 'row',
+          gap: 4,
+        },
+      ]}
+    >
+      {types?.map((t) => (
+        <PokemonType key={t} t={t} />
+      ))}
+    </View>
+  );
+}
+
 export function PokemonListItem({ item, onPress, index }: Props) {
   const isDark = useIsDark();
   const styles = useMemo(() => createStyles(isDark), [isDark]);
@@ -24,11 +41,7 @@ export function PokemonListItem({ item, onPress, index }: Props) {
         <Text style={styles.index}>{index + 1}</Text>
       </View>
 
-      <View style={styles.types}>
-        {item.types?.map((t) => (
-          <PokemonType key={t} t={t} />
-        ))}
-      </View>
+      <PokemonTypes {...item} />
     </Pressable>
   );
 }
