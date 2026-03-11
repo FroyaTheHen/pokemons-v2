@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Pokemon } from '../types/pokemon';
 
 export type MapPin = {
   id: string;
@@ -7,12 +8,12 @@ export type MapPin = {
     latitude: number;
     longitude: number;
   };
-  title: string;
+  pokemon: Pokemon;
 };
 
 type PinContextType = {
   pins: MapPin[];
-  addPin: (latitude: number, longitude: number, title: string) => Promise<void>;
+  addPin: (latitude: number, longitude: number, pokemon: Pokemon) => Promise<void>;
   removePin: (id: string) => Promise<void>;
 };
 
@@ -35,11 +36,11 @@ export function PinProvider({ children }: { children: React.ReactNode }) {
     loadPins();
   }, []);
 
-  const addPin = async (latitude: number, longitude: number, title: string) => {
+  const addPin = async (latitude: number, longitude: number, pokemon: Pokemon) => {
     const newPin: MapPin = {
       id: Date.now().toString(),
       coordinates: { latitude, longitude },
-      title,
+      pokemon,
     };
     const updatedPins = [...pins, newPin];
     setPins(updatedPins);
