@@ -11,7 +11,6 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useIsDark } from '../../contexts/ThemeContext';
-import { usePokemonList } from '../../hooks/usePokemonList';
 import { Pokemon } from '../../types/pokemon';
 import PokemonSearchBar from '../../components/SearchBar';
 
@@ -19,14 +18,19 @@ type Props = {
   coords: { latitude: number; longitude: number } | null;
   onClose: () => void;
   onSave: (pokemon: Pokemon) => void;
+  pokemonList: Pokemon[];
+  count: number;
 };
 
-export function NewPinSheet({ coords, onClose, onSave }: Props) {
+export function NewPinSheet({ coords, onClose, onSave, pokemonList, count }: Props) {
   const isDark = useIsDark();
   const styles = useMemo(() => createStyles(isDark), [isDark]);
-  const { data: pokemonList, loadingMore } = usePokemonList();
   const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
   const [query, setQuery] = useState('');
+  const filteredData = useMemo(
+    () => pokemonList.filter((p) => p.name.includes(query.toLowerCase())),
+    [pokemonList, query]
+  );
 
   useEffect(() => {
     if (coords) setSelectedPokemon(null);
@@ -44,11 +48,13 @@ export function NewPinSheet({ coords, onClose, onSave }: Props) {
           </Text>
           <PokemonSearchBar value={query} onChangeText={setQuery} />
           <FlatList
-            data={pokemonList.filter((p) => p.name.includes(query.toLowerCase()))}
+            data={filteredData}
             keyExtractor={(item) => item.name}
             style={styles.pokemonList}
             keyboardShouldPersistTaps="handled"
-            ListFooterComponent={loadingMore ? <ActivityIndicator style={styles.footer} /> : null}
+            ListFooterComponent={
+              pokemonList.length !== count ? <ActivityIndicator style={styles.footer} /> : null
+            }
             renderItem={({ item, index }) => (
               <Pressable
                 style={[
@@ -142,7 +148,7 @@ const createStyles = (isDark: boolean) =>
     cancelButtonText: { color: isDark ? '#ffffff' : '#000000' },
     saveButton: { backgroundColor: '#007AFF' },
     primaryButtonText: { color: '#ffffff' },
-    pokemonList: { maxHeight: 200, marginBottom: 16 },
+    pokemonList: { height: 150, marginBottom: 16 },
     pokemonItem: {
       borderRadius: 8,
       paddingHorizontal: 14,

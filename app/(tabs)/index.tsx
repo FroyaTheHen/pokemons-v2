@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { Image as RNImage } from 'react-native';
 import heartSolid from '../../assets/icons/heart-solid.png';
 import { useContext } from 'react';
-import { usePokemonList } from '../../hooks/usePokemonList';
+import { usePokemonListContext } from '../../contexts/PokemonListContext';
 import { Pokemon } from '../../types/pokemon';
 import { PokemonListItem } from '../../components/PokemonListItem';
 import { useIsDark } from '../../contexts/ThemeContext';
@@ -84,10 +84,14 @@ function FavouritePokemon() {
 }
 
 export default function Index() {
-  const { data, loading, loadingMore, error, count } = usePokemonList();
+  const { data, loading, error, count } = usePokemonListContext();
   const theme = useIsDark();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const [query, setQuery] = useState('');
+  const filteredData = useMemo(
+    () => data.filter((p) => p.name.includes(query.toLowerCase())),
+    [data, query]
+  );
 
   if (loading) {
     return (
@@ -117,13 +121,15 @@ export default function Index() {
           </Text>
         </View>
         <FlatList
-          data={data.filter((p) => p.name.includes(query.toLowerCase()))}
+          data={filteredData}
           keyExtractor={(item) => item.name}
           contentContainerStyle={styles.list}
           renderItem={({ item, index }) => (
             <PokemonListItem item={item} index={index} onPress={() => navigateToDetail(item)} />
           )}
-          ListFooterComponent={loadingMore ? <ActivityIndicator style={styles.footer} /> : null}
+          ListFooterComponent={
+            data.length !== count ? <ActivityIndicator style={styles.footer} /> : null
+          }
         />
       </View>
     </View>
@@ -173,6 +179,7 @@ const createStyles = (isDark: boolean) => {
       padding: 16,
     },
     pokeListContainer: {
+      flex: 1,
       backgroundColor: bg,
     },
     favouriteName: {

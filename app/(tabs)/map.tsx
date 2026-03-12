@@ -10,12 +10,14 @@ import { NewPinSheet } from '../../components/map/NewPinSheet';
 import { PinDetailSheet } from '../../components/map/PinDetailSheet';
 import { PinChipList } from '../../components/map/PinChipList';
 import { useUserLocation } from '../../hooks/useUserLocation';
+import { usePokemonListContext } from '../../contexts/PokemonListContext';
 
 const COORD_THRESHOLD = 0.001;
 const ZOOM_DEFAULT = 12;
 
 export default function MapScreen() {
   const { location } = useUserLocation();
+  const { data: pokemonList, count } = usePokemonListContext();
   const mapRef = useRef<AppleMapsViewType>(null);
   const cameraRef = useRef({ latitude: 50.047704, longitude: 19.95814, zoom: ZOOM_DEFAULT });
   const [selectedPin, setSelectedPin] = useState<MapPin | null>(null);
@@ -142,6 +144,8 @@ export default function MapScreen() {
           coords={pendingCoords}
           onClose={() => setPendingCoords(null)}
           onSave={handleSavePin}
+          pokemonList={pokemonList}
+          count={count}
         />
         <PinDetailSheet
           pin={selectedPin}
