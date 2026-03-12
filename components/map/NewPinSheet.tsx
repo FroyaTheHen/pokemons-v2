@@ -8,10 +8,12 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { useIsDark } from '../../contexts/ThemeContext';
 import { usePokemonList } from '../../hooks/usePokemonList';
 import { Pokemon } from '../../types/pokemon';
+import PokemonSearchBar from '../../components/SearchBar';
 
 type Props = {
   coords: { latitude: number; longitude: number } | null;
@@ -22,8 +24,9 @@ type Props = {
 export function NewPinSheet({ coords, onClose, onSave }: Props) {
   const isDark = useIsDark();
   const styles = useMemo(() => createStyles(isDark), [isDark]);
-  const { data: pokemonList, loadMore, hasMore, loadingMore } = usePokemonList();
+  const { data: pokemonList, loadingMore } = usePokemonList();
   const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     if (coords) setSelectedPokemon(null);
@@ -39,13 +42,13 @@ export function NewPinSheet({ coords, onClose, onSave }: Props) {
           <Text style={styles.sheetCoords}>
             {coords?.latitude.toFixed(5)}, {coords?.longitude.toFixed(5)}
           </Text>
+          <PokemonSearchBar value={query} onChangeText={setQuery} />
           <FlatList
-            data={pokemonList}
+            data={pokemonList.filter((p) => p.name.includes(query.toLowerCase()))}
             keyExtractor={(item) => item.name}
             style={styles.pokemonList}
             keyboardShouldPersistTaps="handled"
-            onEndReached={() => hasMore && !loadingMore && loadMore()}
-            onEndReachedThreshold={0.3}
+            ListFooterComponent={loadingMore ? <ActivityIndicator style={styles.footer} /> : null}
             renderItem={({ item, index }) => (
               <Pressable
                 style={[
@@ -147,4 +150,7 @@ const createStyles = (isDark: boolean) =>
       marginBottom: 4,
     },
     pokemonItemText: { fontSize: 15, fontWeight: '500', textTransform: 'capitalize' },
+    footer: {
+      paddingVertical: 16,
+    },
   });
