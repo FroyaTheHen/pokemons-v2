@@ -10,6 +10,7 @@ import { PokemonListItem } from '../../components/PokemonListItem';
 import { useIsDark } from '../../contexts/ThemeContext';
 import React, { useMemo } from 'react';
 import { PokemonContext } from '../../contexts/FavouriteContext';
+import PokemonSearchBar from '../../components/SearchBar';
 
 function navigateToDetail(item: Pokemon) {
   router.push({
@@ -105,6 +106,7 @@ export default function Index() {
   return (
     <View style={styles.root}>
       <FavouritePokemon />
+      <PokemonSearchBar />
       <View style={styles.pokeListContainer}>
         <View style={styles.row}>
           <Text style={styles.name}> Pokedex </Text>

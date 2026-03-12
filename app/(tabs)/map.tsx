@@ -62,7 +62,7 @@ export default function MapScreen() {
     const { latitude, longitude } = event.coordinates;
     if (latitude == null || longitude == null) return;
 
-    const dynamicThreshold = COORD_THRESHOLD * (50 / cameraRef.current.zoom);
+    const dynamicThreshold = COORD_THRESHOLD * (70 / cameraRef.current.zoom);
     const nearbyPin = pins.find(
       (p) =>
         Math.abs(p.coordinates.latitude - latitude) < dynamicThreshold &&
