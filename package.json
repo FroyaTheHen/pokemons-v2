@@ -31,6 +31,7 @@
     "react-native": "0.81.5",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
+    "react-native-vision-camera": "^4.7.3",
     "react-native-web": "^0.21.0"
   },
   "devDependencies": {
@@ -42,7 +43,8 @@
     "lint-staged": "^16.3.2",
     "prettier": "^3.8.1",
     "typescript": "~5.9.2",
-    "typescript-eslint": "^8.56.1"
+    "typescript-eslint": "^8.56.1",
+     "@react-native-community/cli": "latest"
   },
   "private": true,
   "lint-staged": {

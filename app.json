@@ -14,7 +14,11 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.pokemons"
+      "bundleIdentifier": "com.anonymous.pokemons",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera.",
+        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -24,7 +28,11 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.pokemons"
+      "package": "com.anonymous.pokemons",
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -44,8 +52,12 @@
           "requestLocationPermission": true,
           "locationPermission": "Allow $(PRODUCT_NAME) to use your location"
         }
-      ]
+      ],
+      ["react-native-vision-camera", {
+      "cameraPermissionText": "Allow $(PRODUCT_NAME) to access your camera.",
+      "enableMicrophonePermission": true,
+      "microphonePermissionText": "Allow $(PRODUCT_NAME) to access your microphone."
+    }]
     ]
-    
   }
 }
