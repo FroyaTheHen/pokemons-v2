@@ -14,7 +14,8 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.pokemons",
+      "bundleIdentifier": "com.FroyaTheHen.pokemons",
+      "deploymentTarget": "15.5",
       "infoPlist": {
         "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera.",
         "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone."
@@ -28,7 +29,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.pokemons",
+      "package": "com.FroyaTheHen.pokemons",
       "permissions": [
         "CAMERA",
         "RECORD_AUDIO"
