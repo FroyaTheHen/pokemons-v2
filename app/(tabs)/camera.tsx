@@ -4,6 +4,7 @@ import { Camera, useCameraPermission, useCameraDevice } from 'react-native-visio
 import FaceDetection from '@react-native-ml-kit/face-detection';
 import { useFocusEffect } from 'expo-router';
 import { PokemonContext } from '../../contexts/FavouriteContext';
+import { CameraRoll } from '@react-native-camera-roll/camera-roll';
 
 const SPRITE_SIZE = 64;
 
@@ -17,6 +18,19 @@ export default function CameraScreen() {
   const [forehead, setForehead] = useState<{ x: number; y: number } | null>(null);
   const viewSizeRef = useRef({ width: 0, height: 0 });
   const { pokemon } = useContext(PokemonContext)!;
+  const [saved, setSaved] = useState(false);
+
+  const takeAndSave = useCallback(async () => {
+    if (!cameraRef.current) return;
+    try {
+      const photo = await cameraRef.current.takePhoto();
+      await CameraRoll.saveAsset(`file://${photo.path}`, { type: 'photo' });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const favouriteOverlay = useMemo(() => {
     if (pokemon?.spriteSmall) {
@@ -161,6 +175,9 @@ export default function CameraScreen() {
           {cameraPosition === 'front' ? '⬅ Back' : '🤳 Front'}
         </Text>
       </TouchableOpacity>
+      <TouchableOpacity style={styles.photoButton} onPress={takeAndSave}>
+        <Text style={styles.flipButtonText}>{saved ? '✅' : '📸'}</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -180,6 +197,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   flipButton: {
+    position: 'absolute',
+    bottom: 24,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  photoButton: {
     position: 'absolute',
     bottom: 24,
     alignSelf: 'center',
