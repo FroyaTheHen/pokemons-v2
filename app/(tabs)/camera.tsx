@@ -1,10 +1,11 @@
-import { Text, View, StyleSheet, LayoutChangeEvent, TouchableOpacity } from 'react-native';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Text, View, StyleSheet, LayoutChangeEvent, TouchableOpacity, Image } from 'react-native';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Camera, useCameraPermission, useCameraDevice } from 'react-native-vision-camera';
 import FaceDetection from '@react-native-ml-kit/face-detection';
 import { useFocusEffect } from 'expo-router';
+import { PokemonContext } from '../../contexts/FavouriteContext';
 
-const DOT = 8;
+const SPRITE_SIZE = 64;
 
 export default function CameraScreen() {
   const [cameraPosition, setCameraPosition] = useState<'back' | 'front'>('front');
@@ -15,6 +16,14 @@ export default function CameraScreen() {
   const [isFocused, setIsFocused] = useState(false);
   const [forehead, setForehead] = useState<{ x: number; y: number } | null>(null);
   const viewSizeRef = useRef({ width: 0, height: 0 });
+  const { pokemon } = useContext(PokemonContext)!;
+
+  const favouriteOverlay = useMemo(() => {
+    if (pokemon?.spriteSmall) {
+      return <Image source={{ uri: pokemon.spriteSmall }} style={styles.sprite} />;
+    }
+    return <Text style={styles.noFavLabel}>No favourite pokemon</Text>;
+  }, [pokemon?.spriteSmall]);
 
   useEffect(() => {
     requestPermission();
@@ -139,10 +148,12 @@ export default function CameraScreen() {
       />
       {forehead && (
         <View
-          style={[styles.markerRoot, { top: forehead.y - DOT / 2, left: forehead.x - DOT / 2 }]}
+          style={[
+            styles.markerRoot,
+            { top: forehead.y - SPRITE_SIZE / 2, left: forehead.x - SPRITE_SIZE / 2 },
+          ]}
         >
-          <Text style={styles.label}>forehead</Text>
-          <View style={styles.dot} />
+          {favouriteOverlay}
         </View>
       )}
       <TouchableOpacity style={styles.flipButton} onPress={flipCamera}>
@@ -155,18 +166,15 @@ export default function CameraScreen() {
 }
 
 const styles = StyleSheet.create({
-  markerRoot: {
+  sprite: {
     position: 'absolute',
-    alignItems: 'center',
-    gap: 6,
+    width: SPRITE_SIZE,
+    height: SPRITE_SIZE,
   },
-  dot: {
-    width: DOT,
-    height: DOT,
-    borderRadius: DOT / 2,
-    backgroundColor: '#00ff00',
+  noFavRoot: {
+    position: 'absolute',
   },
-  label: {
+  noFavLabel: {
     color: '#00ff00',
     fontSize: 11,
     fontWeight: 'bold',
@@ -184,5 +192,10 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  markerRoot: {
+    position: 'absolute',
+    alignItems: 'center',
+    gap: 6,
   },
 });

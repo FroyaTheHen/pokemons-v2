@@ -42,18 +42,29 @@ function StatRow({ label, value, icon, underline, themeStyle }: StatRowProps) {
 }
 
 export default function PokemonDetail() {
-  const { name, hp, speed, attack, specialAttack, defense, specialDefense, types, spriteFull } =
-    useLocalSearchParams<{
-      name: string;
-      hp: string;
-      speed: string;
-      attack: string;
-      specialAttack: string;
-      defense: string;
-      specialDefense: string;
-      types: string;
-      spriteFull: string;
-    }>();
+  const {
+    name,
+    hp,
+    speed,
+    attack,
+    specialAttack,
+    defense,
+    specialDefense,
+    types,
+    spriteFull,
+    spriteSmall,
+  } = useLocalSearchParams<{
+    name: string;
+    hp: string;
+    speed: string;
+    attack: string;
+    specialAttack: string;
+    defense: string;
+    specialDefense: string;
+    types: string;
+    spriteFull: string;
+    spriteSmall: string;
+  }>();
 
   const isDark = useIsDark();
   const themeStyle = useMemo(() => createStyles(isDark), [isDark]);
@@ -77,8 +88,20 @@ export default function PokemonDetail() {
       specialDefense: specialDefense ? Number(specialDefense) : undefined,
       types: typesList,
       spriteFull,
+      spriteSmall,
     }),
-    [name, hp, speed, attack, specialAttack, defense, specialDefense, typesList, spriteFull]
+    [
+      name,
+      hp,
+      speed,
+      attack,
+      specialAttack,
+      defense,
+      specialDefense,
+      typesList,
+      spriteFull,
+      spriteSmall,
+    ]
   );
 
   const isFav = pokeContext?.pokemon?.name === name;
