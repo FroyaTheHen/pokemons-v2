@@ -12,6 +12,8 @@ import { Camera, useCameraPermission, useCameraDevice } from 'react-native-visio
 import FaceDetection from '@react-native-ml-kit/face-detection';
 import { useFocusEffect } from 'expo-router';
 import { PokemonContext } from '../../contexts/FavouriteContext';
+import { usePins } from '../../contexts/PinContext';
+import { getPhotoLocation } from '../../hooks/usePhotoLocation';
 import {
   CameraRoll,
   iosRequestReadWriteGalleryPermission,
@@ -160,6 +162,7 @@ export default function CameraScreen() {
 
   // ─── Pokemon overlay ──────────────────────────────────────────────────────
   const { pokemon } = useContext(PokemonContext)!;
+  const { addPin } = usePins();
 
   // ─── Save state ───────────────────────────────────────────────────────────
   const isCapturingRef = useRef(false);
@@ -184,19 +187,28 @@ export default function CameraScreen() {
 
     const photoUri = lastPhotoUriRef.current;
     const currentForehead = forehead;
-    const spriteUrl = pokemon?.spriteSmall ?? null;
+    const currentPokemon = pokemon;
+    const spriteUrl = currentPokemon?.spriteSmall ?? null;
     const { width: screenW, height: screenH } = viewSizeRef.current;
 
     // Unblock the user immediately
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
 
-    compositeAndSave(photoUri, currentForehead, spriteUrl, screenW, screenH)
-      .catch((e) => console.error('[Camera] compositeAndSave error:', e))
+    Promise.all([
+      compositeAndSave(photoUri, currentForehead, spriteUrl, screenW, screenH),
+      getPhotoLocation(),
+    ])
+      .then(([, loc]) => {
+        if (loc && currentPokemon) {
+          addPin(loc.coords.latitude, loc.coords.longitude, currentPokemon, photoUri);
+        }
+      })
+      .catch((e) => console.error('[Camera] save error:', e))
       .finally(() => {
         isCapturingRef.current = false;
       });
-  }, [forehead, pokemon?.spriteSmall]);
+  }, [forehead, pokemon, addPin]);
 
   // ─── Pokemon sprite overlay (live view) ───────────────────────────────────
   const favouriteOverlay = useMemo(() => {

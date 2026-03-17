@@ -103,14 +103,17 @@ export default function MapScreen() {
     id: pin.id,
     coordinates: pin.coordinates,
     title: pin.pokemon.name.charAt(0).toUpperCase() + pin.pokemon.name.slice(1),
-    icon: pin.pokemon.spriteSmall ? pinImageRefs.get(pin.pokemon.spriteSmall) : undefined,
+    icon:
+      !pin.photoUri && pin.pokemon.spriteSmall
+        ? pinImageRefs.get(pin.pokemon.spriteSmall)
+        : undefined,
   }));
 
   if (Platform.OS === 'ios') {
     return (
       <View style={styles.container}>
         {pins.map((pin) =>
-          pin.pokemon.spriteSmall ? (
+          !pin.photoUri && pin.pokemon.spriteSmall ? (
             <PinImageLoader key={pin.id} url={pin.pokemon.spriteSmall} onLoad={handleImageLoad} />
           ) : null
         )}
