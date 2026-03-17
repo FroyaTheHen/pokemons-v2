@@ -1,14 +1,56 @@
-import { Text, View, StyleSheet, LayoutChangeEvent, TouchableOpacity, Image } from 'react-native';
+import {
+  Text,
+  View,
+  StyleSheet,
+  LayoutChangeEvent,
+  TouchableOpacity,
+  Image,
+  Platform,
+} from 'react-native';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Camera, useCameraPermission, useCameraDevice } from 'react-native-vision-camera';
 import FaceDetection from '@react-native-ml-kit/face-detection';
 import { useFocusEffect } from 'expo-router';
 import { PokemonContext } from '../../contexts/FavouriteContext';
-import { CameraRoll } from '@react-native-camera-roll/camera-roll';
+import { usePins } from '../../contexts/PinContext';
+import { getPhotoLocation } from '../../hooks/usePhotoLocation';
+import {
+  CameraRoll,
+  iosRequestReadWriteGalleryPermission,
+} from '@react-native-camera-roll/camera-roll';
 import { Skia, ImageFormat } from '@shopify/react-native-skia';
 import { File, Paths } from 'expo-file-system';
 
 const SPRITE_SIZE = 64;
+
+// Reorients a landscape JPEG to portrait by decoding through Skia (which applies
+// EXIF rotation) and re-encoding. ML Kit on iOS does not respect EXIF, so it
+// sees landscape frames as sideways and misses faces entirely.
+async function reorientForDetection(rawUri: string, rawW: number, rawH: number): Promise<string> {
+  if (rawW <= rawH) return rawUri; // already portrait — skip
+
+  const img = await loadSkiaImage(rawUri);
+  if (!img) return rawUri;
+
+  // After Skia EXIF decode, img dims are portrait (rawH × rawW)
+  const w = img.width();
+  const h = img.height();
+  const surface = Skia.Surface.Make(w, h);
+  if (!surface) return rawUri;
+
+  surface
+    .getCanvas()
+    .drawImageRect(
+      img,
+      { x: 0, y: 0, width: w, height: h },
+      { x: 0, y: 0, width: w, height: h },
+      Skia.Paint()
+    );
+  const base64 = surface.makeImageSnapshot().encodeToBase64(ImageFormat.JPEG, 80);
+  const tmp = new File(Paths.cache, `detect_${Date.now()}.jpg`);
+  tmp.write(base64, { encoding: 'base64' });
+  return tmp.uri;
+}
 
 // ─── Skia compositing ─────────────────────────────────────────────────────────
 // Loads any URI (file:// or http://) into a Skia image using fetch so it works
@@ -24,8 +66,6 @@ async function loadSkiaImage(uri: string) {
 // writes the result to a temp file and saves it to the camera roll.
 async function compositeAndSave(
   photoUri: string,
-  photoW: number,
-  photoH: number,
   forehead: { x: number; y: number } | null,
   spriteUrl: string | null,
   screenW: number,
@@ -34,19 +74,35 @@ async function compositeAndSave(
   const photoImage = await loadSkiaImage(photoUri);
   if (!photoImage) throw new Error('Failed to decode photo');
 
-  const surface = Skia.Surface.Make(photoW, photoH);
+  // Use actual decoded dimensions — Skia applies EXIF rotation on decode,
+  // so these may differ from the raw sensor dims reported by VisionCamera.
+  const imgW = photoImage.width();
+  const imgH = photoImage.height();
+
+  // Cap output at 1920px on the longest side to keep memory usage manageable
+  const MAX_DIM = 1920;
+  const rawScale = Math.min(1, MAX_DIM / Math.max(imgW, imgH));
+  const outW = Math.round(imgW * rawScale);
+  const outH = Math.round(imgH * rawScale);
+
+  const surface = Skia.Surface.Make(outW, outH);
   if (!surface) throw new Error('Failed to create Skia surface');
 
   const canvas = surface.getCanvas();
-  canvas.drawImage(photoImage, 0, 0);
+  canvas.drawImageRect(
+    photoImage,
+    { x: 0, y: 0, width: imgW, height: imgH },
+    { x: 0, y: 0, width: outW, height: outH },
+    Skia.Paint()
+  );
 
   // Overlay the sprite if we have a face position and a sprite URL
   if (forehead && spriteUrl) {
     const spriteImage = await loadSkiaImage(spriteUrl);
     if (spriteImage) {
-      // Map screen-space forehead coords → photo-space coords
-      const scaleX = photoW / screenW;
-      const scaleY = photoH / screenH;
+      // Map screen-space forehead coords → output-space coords
+      const scaleX = outW / screenW;
+      const scaleY = outH / screenH;
       const spriteW = SPRITE_SIZE * scaleX;
       const spriteH = SPRITE_SIZE * scaleY;
       const paint = Skia.Paint();
@@ -82,7 +138,7 @@ export default function CameraScreen() {
 
   // ─── Camera session state ─────────────────────────────────────────────────
   const cameraRef = useRef<Camera>(null);
-  // true only after onInitialized fires — gates every takeSnapshot() call
+  // true only after onInitialized fires — gates every takePhoto() call
   const isCameraReadyRef = useRef(false);
   const [isCameraReady, setIsCameraReady] = useState(false); // drives button disabled state
   // true while a flip or error-recovery is in progress — prevents onError
@@ -106,6 +162,7 @@ export default function CameraScreen() {
 
   // ─── Pokemon overlay ──────────────────────────────────────────────────────
   const { pokemon } = useContext(PokemonContext)!;
+  const { addPin } = usePins();
 
   // ─── Save state ───────────────────────────────────────────────────────────
   const isCapturingRef = useRef(false);
@@ -114,6 +171,10 @@ export default function CameraScreen() {
 
   useEffect(() => {
     requestPermission();
+    if (Platform.OS !== 'ios') return;
+    iosRequestReadWriteGalleryPermission().catch((e: unknown) =>
+      console.warn('[Camera] photo library permission error:', e)
+    );
   }, []);
 
   // ─── Save ─────────────────────────────────────────────────────────────────
@@ -125,21 +186,29 @@ export default function CameraScreen() {
     isCapturingRef.current = true;
 
     const photoUri = lastPhotoUriRef.current;
-    const { width: photoW, height: photoH } = lastPhotoDimsRef.current;
     const currentForehead = forehead;
-    const spriteUrl = pokemon?.spriteSmall ?? null;
+    const currentPokemon = pokemon;
+    const spriteUrl = currentPokemon?.spriteSmall ?? null;
     const { width: screenW, height: screenH } = viewSizeRef.current;
 
     // Unblock the user immediately
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
 
-    compositeAndSave(photoUri, photoW, photoH, currentForehead, spriteUrl, screenW, screenH)
-      .catch((e) => console.error('[Camera] compositeAndSave error:', e))
+    Promise.all([
+      compositeAndSave(photoUri, currentForehead, spriteUrl, screenW, screenH),
+      getPhotoLocation(),
+    ])
+      .then(([, loc]) => {
+        if (loc && currentPokemon) {
+          addPin(loc.coords.latitude, loc.coords.longitude, currentPokemon, photoUri);
+        }
+      })
+      .catch((e) => console.error('[Camera] save error:', e))
       .finally(() => {
         isCapturingRef.current = false;
       });
-  }, [forehead, pokemon?.spriteSmall]);
+  }, [forehead, pokemon, addPin]);
 
   // ─── Pokemon sprite overlay (live view) ───────────────────────────────────
   const favouriteOverlay = useMemo(() => {
@@ -158,7 +227,6 @@ export default function CameraScreen() {
     isSwitchingRef.current = true;
     setIsCameraActive(false);
     setTimeout(() => {
-      console.log('[Camera] recovery → setIsCameraActive(true)');
       setIsCameraActive(true);
     }, 500);
   }, []);
@@ -183,91 +251,142 @@ export default function CameraScreen() {
 
   // ─── Detection loop ───────────────────────────────────────────────────────
   // Runs every 800 ms while the screen is focused.
-  // Uses takeSnapshot() — reads directly from preview buffer, no pipeline
-  // interruption, no exposure recalculation, no preview darkening.
+  // iOS uses takePhoto() (physical device requirement); Android uses takeSnapshot()
+  // (faster, no preview interruption).
   useFocusEffect(
     useCallback(() => {
       setIsFocused(true);
-      const interval = setInterval(async () => {
-        // Skip if camera isn't ready or another operation is already running
-        if (
-          !cameraRef.current ||
-          !isCameraReadyRef.current ||
-          detectionBusyRef.current ||
-          isCapturingRef.current ||
-          viewSizeRef.current.width === 0
-        )
-          return;
-
-        detectionBusyRef.current = true;
-        try {
-          const photo = await cameraRef.current.takeSnapshot({ quality: 85 });
-          lastPhotoUriRef.current = `file://${photo.path}`;
-          lastPhotoDimsRef.current = { width: photo.width, height: photo.height };
-          console.log('[Camera] takeSnapshot OK', photo.width, 'x', photo.height);
-
-          const faces = await FaceDetection.detect(`file://${photo.path}`, {
-            performanceMode: 'accurate',
-            landmarkMode: 'all',
-            minFaceSize: 0.05,
-          });
-
-          if (faces.length === 0) {
-            setForehead(null);
+      const interval = setInterval(
+        async () => {
+          // Skip if camera isn't ready or another operation is already running
+          if (
+            !cameraRef.current ||
+            !isCameraReadyRef.current ||
+            detectionBusyRef.current ||
+            isCapturingRef.current ||
+            viewSizeRef.current.width === 0
+          )
             return;
+
+          detectionBusyRef.current = true;
+          try {
+            const photo =
+              Platform.OS === 'ios'
+                ? await cameraRef.current.takePhoto({ flash: 'off', enableShutterSound: false })
+                : await cameraRef.current.takeSnapshot({ quality: 40 });
+            lastPhotoUriRef.current = `file://${photo.path}`;
+            lastPhotoDimsRef.current = { width: photo.width, height: photo.height };
+            console.log(
+              '[Detection] photo raw dims:',
+              photo.width,
+              'x',
+              photo.height,
+              'orientation:',
+              (photo as unknown as Record<string, unknown>).orientation
+            );
+
+            const detectUri = await reorientForDetection(
+              `file://${photo.path}`,
+              photo.width,
+              photo.height
+            );
+            console.log('[Detection] detectUri reoriented:', detectUri !== `file://${photo.path}`);
+
+            const faces = await FaceDetection.detect(detectUri, {
+              performanceMode: 'accurate',
+              landmarkMode: 'all',
+              minFaceSize: 0.05,
+            });
+            console.log('[Detection] faces found:', faces.length);
+
+            if (faces.length === 0) {
+              setForehead(null);
+              return;
+            }
+
+            const face = faces[0];
+            console.log('[Detection] face frame:', JSON.stringify(face.frame));
+            console.log('[Detection] landmarks:', JSON.stringify(face.landmarks));
+
+            const { width: screenW, height: screenH } = viewSizeRef.current;
+            const isFront = cameraPositionRef.current === 'front';
+            console.log('[Detection] screen:', screenW, 'x', screenH, 'isFront:', isFront);
+
+            // VisionCamera reports raw sensor dims (may be landscape).
+            // ML Kit reads EXIF and returns coords in display-oriented (portrait) space.
+            const isRotated = photo.width > photo.height;
+            const displayW = isRotated ? photo.height : photo.width;
+            const displayH = isRotated ? photo.width : photo.height;
+            console.log(
+              '[Detection] isRotated:',
+              isRotated,
+              'displayW:',
+              displayW,
+              'displayH:',
+              displayH
+            );
+
+            // Cover-fit: work out scale + crop offset so photo coords map to screen coords
+            const scale =
+              displayW / displayH > screenW / screenH
+                ? screenH / displayH // photo wider than screen → letterbox sides
+                : screenW / displayW; // photo taller than screen → letterbox top/bottom
+            const offsetX = (displayW - screenW / scale) / 2;
+            const offsetY = (displayH - screenH / scale) / 2;
+            console.log(
+              '[Detection] scale:',
+              scale.toFixed(4),
+              'offsetX:',
+              offsetX.toFixed(1),
+              'offsetY:',
+              offsetY.toFixed(1)
+            );
+
+            const toScreenX = (rawX: number) => {
+              // Mirror X for front camera (sensor is not pre-mirrored)
+              const x = isFront ? displayW - rawX : rawX;
+              return (x - offsetX) * scale;
+            };
+            const toScreenY = (rawY: number) => (rawY - offsetY) * scale;
+
+            // Prefer actual landmark positions; fall back to face bounding box
+            const leftEye = face.landmarks?.leftEye;
+            const rightEye = face.landmarks?.rightEye;
+            const rawX =
+              leftEye && rightEye
+                ? (leftEye.position.x + rightEye.position.x) / 2
+                : face.frame.left + face.frame.width / 2;
+            const eyeY =
+              leftEye && rightEye
+                ? (leftEye.position.y + rightEye.position.y) / 2
+                : face.frame.top + face.frame.height * 0.4;
+            // Forehead = halfway between the top of the face frame and the eyes
+            const foreheadRawY = face.frame.top + (eyeY - face.frame.top) / 2;
+
+            const screenPos = { x: toScreenX(rawX), y: toScreenY(foreheadRawY) };
+            console.log(
+              '[Detection] rawX:',
+              rawX.toFixed(1),
+              'foreheadRawY:',
+              foreheadRawY.toFixed(1),
+              '→ screen:',
+              JSON.stringify(screenPos)
+            );
+            setForehead(screenPos);
+          } catch (e) {
+            const err = e as Record<string, unknown>;
+            console.warn('[Camera] detection error:', err?.['code'], err?.['message']);
+            if (err?.['code'] === 'system/camera-is-restricted' && isCameraReadyRef.current) {
+              console.warn('[Camera] detection: bad session → recovering');
+              recoverCamera();
+            }
+          } finally {
+            detectionBusyRef.current = false;
           }
-
-          const face = faces[0];
-          const { width: screenW, height: screenH } = viewSizeRef.current;
-          const isFront = cameraPositionRef.current === 'front';
-
-          // VisionCamera reports raw sensor dims (may be landscape).
-          // ML Kit reads EXIF and returns coords in display-oriented (portrait) space.
-          const isRotated = photo.width > photo.height;
-          const displayW = isRotated ? photo.height : photo.width;
-          const displayH = isRotated ? photo.width : photo.height;
-
-          // Cover-fit: work out scale + crop offset so photo coords map to screen coords
-          const scale =
-            displayW / displayH > screenW / screenH
-              ? screenH / displayH // photo wider than screen → letterbox sides
-              : screenW / displayW; // photo taller than screen → letterbox top/bottom
-          const offsetX = (displayW - screenW / scale) / 2;
-          const offsetY = (displayH - screenH / scale) / 2;
-
-          const toScreenX = (rawX: number) => {
-            // Mirror X for front camera (sensor is not pre-mirrored)
-            const x = isFront ? displayW - rawX : rawX;
-            return (x - offsetX) * scale;
-          };
-          const toScreenY = (rawY: number) => (rawY - offsetY) * scale;
-
-          // Prefer actual landmark positions; fall back to face bounding box
-          const leftEye = face.landmarks?.leftEye;
-          const rightEye = face.landmarks?.rightEye;
-          const rawX =
-            leftEye && rightEye
-              ? (leftEye.position.x + rightEye.position.x) / 2
-              : face.frame.left + face.frame.width / 2;
-          const eyeY =
-            leftEye && rightEye
-              ? (leftEye.position.y + rightEye.position.y) / 2
-              : face.frame.top + face.frame.height * 0.4;
-          // Forehead = halfway between the top of the face frame and the eyes
-          const foreheadRawY = face.frame.top + (eyeY - face.frame.top) / 2;
-
-          setForehead({ x: toScreenX(rawX), y: toScreenY(foreheadRawY) });
-        } catch (e) {
-          const err = e as Record<string, unknown>;
-          console.warn('[Camera] detection error:', err?.['code'], err?.['message']);
-          if (err?.['code'] === 'system/camera-is-restricted' && isCameraReadyRef.current) {
-            console.warn('[Camera] detection: bad session → recovering');
-            recoverCamera();
-          }
-        } finally {
-          detectionBusyRef.current = false;
-        }
-      }, 800);
+          // takePhoto() on iOS captures full-res images — run less frequently to avoid memory pressure
+        },
+        Platform.OS === 'ios' ? 2500 : 800
+      );
 
       return () => {
         setIsFocused(false);
@@ -304,6 +423,8 @@ export default function CameraScreen() {
         ref={cameraRef}
         style={StyleSheet.absoluteFill}
         device={device}
+        photo
+        outputOrientation="device"
         isActive={isFocused && isCameraActive}
         onInitialized={() => {
           isCameraReadyRef.current = true;

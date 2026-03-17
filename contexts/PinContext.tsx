@@ -9,11 +9,17 @@ export type MapPin = {
     longitude: number;
   };
   pokemon: Pokemon;
+  photoUri?: string;
 };
 
 type PinContextType = {
   pins: MapPin[];
-  addPin: (latitude: number, longitude: number, pokemon: Pokemon) => Promise<void>;
+  addPin: (
+    latitude: number,
+    longitude: number,
+    pokemon: Pokemon,
+    photoUri?: string
+  ) => Promise<void>;
   removePin: (id: string) => Promise<void>;
 };
 
@@ -36,11 +42,17 @@ export function PinProvider({ children }: { children: React.ReactNode }) {
     loadPins();
   }, []);
 
-  const addPin = async (latitude: number, longitude: number, pokemon: Pokemon) => {
+  const addPin = async (
+    latitude: number,
+    longitude: number,
+    pokemon: Pokemon,
+    photoUri?: string
+  ) => {
     const newPin: MapPin = {
       id: Date.now().toString(),
       coordinates: { latitude, longitude },
       pokemon,
+      ...(photoUri ? { photoUri } : {}),
     };
     const updatedPins = [...pins, newPin];
     setPins(updatedPins);

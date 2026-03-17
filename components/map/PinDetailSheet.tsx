@@ -19,6 +19,9 @@ export function PinDetailSheet({ pin, onClose, onDelete }: Props) {
         <Pressable style={styles.modalBackdrop} onPress={onClose} />
         <View style={styles.bottomSheet}>
           <View style={styles.sheetHandle} />
+          {pin?.photoUri ? (
+            <Image source={{ uri: pin.photoUri }} style={styles.photoPreview} resizeMode="cover" />
+          ) : null}
           <View style={styles.pinDetailRow}>
             {pin?.pokemon.spriteSmall ? (
               <Image source={{ uri: pin.pokemon.spriteSmall }} style={styles.pinDetailImage} />
@@ -95,4 +98,5 @@ const createStyles = (isDark: boolean) =>
     cancelButtonText: { color: isDark ? '#ffffff' : '#000000' },
     deleteButton: { backgroundColor: '#FF3B30' },
     primaryButtonText: { color: '#ffffff' },
+    photoPreview: { width: '100%', height: 180, borderRadius: 10, marginBottom: 12 },
   });
