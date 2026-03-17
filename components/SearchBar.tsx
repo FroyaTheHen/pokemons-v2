@@ -42,14 +42,13 @@ const createStyles = (isDark: boolean) =>
       borderWidth: 1,
       borderColor: isDark ? '#5d5c5c' : '#c5c5c5',
       paddingHorizontal: 12,
-      paddingVertical: 8,
       backgroundColor: isDark ? '#1e1e1e' : '#ffffff',
-      height: 50,
     },
     input: {
       flex: 1,
       fontSize: 16,
       color: isDark ? '#ffffff' : '#000000',
+      paddingVertical: 12,
     },
     icon: {
       width: 20,

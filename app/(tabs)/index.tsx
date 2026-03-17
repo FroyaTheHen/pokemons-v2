@@ -25,6 +25,7 @@ function navigateToDetail(item: Pokemon) {
       specialDefense: item.specialDefense,
       types: item.types?.join(','),
       spriteFull: item.spriteFull,
+      spriteSmall: item.spriteSmall,
     },
   });
 }
