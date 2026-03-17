@@ -21,6 +21,35 @@ import { File, Paths } from 'expo-file-system';
 
 const SPRITE_SIZE = 64;
 
+// Reorients a landscape JPEG to portrait by decoding through Skia (which applies
+// EXIF rotation) and re-encoding. ML Kit on iOS does not respect EXIF, so it
+// sees landscape frames as sideways and misses faces entirely.
+async function reorientForDetection(rawUri: string, rawW: number, rawH: number): Promise<string> {
+  if (rawW <= rawH) return rawUri; // already portrait — skip
+
+  const img = await loadSkiaImage(rawUri);
+  if (!img) return rawUri;
+
+  // After Skia EXIF decode, img dims are portrait (rawH × rawW)
+  const w = img.width();
+  const h = img.height();
+  const surface = Skia.Surface.Make(w, h);
+  if (!surface) return rawUri;
+
+  surface
+    .getCanvas()
+    .drawImageRect(
+      img,
+      { x: 0, y: 0, width: w, height: h },
+      { x: 0, y: 0, width: w, height: h },
+      Skia.Paint()
+    );
+  const base64 = surface.makeImageSnapshot().encodeToBase64(ImageFormat.JPEG, 80);
+  const tmp = new File(Paths.cache, `detect_${Date.now()}.jpg`);
+  tmp.write(base64, { encoding: 'base64' });
+  return tmp.uri;
+}
+
 // ─── Skia compositing ─────────────────────────────────────────────────────────
 // Loads any URI (file:// or http://) into a Skia image using fetch so it works
 // uniformly for both local snapshots and remote pokemon sprite URLs.
@@ -235,12 +264,28 @@ export default function CameraScreen() {
                 : await cameraRef.current.takeSnapshot({ quality: 40 });
             lastPhotoUriRef.current = `file://${photo.path}`;
             lastPhotoDimsRef.current = { width: photo.width, height: photo.height };
+            console.log(
+              '[Detection] photo raw dims:',
+              photo.width,
+              'x',
+              photo.height,
+              'orientation:',
+              (photo as unknown as Record<string, unknown>).orientation
+            );
 
-            const faces = await FaceDetection.detect(`file://${photo.path}`, {
+            const detectUri = await reorientForDetection(
+              `file://${photo.path}`,
+              photo.width,
+              photo.height
+            );
+            console.log('[Detection] detectUri reoriented:', detectUri !== `file://${photo.path}`);
+
+            const faces = await FaceDetection.detect(detectUri, {
               performanceMode: 'accurate',
               landmarkMode: 'all',
               minFaceSize: 0.05,
             });
+            console.log('[Detection] faces found:', faces.length);
 
             if (faces.length === 0) {
               setForehead(null);
@@ -248,14 +293,26 @@ export default function CameraScreen() {
             }
 
             const face = faces[0];
+            console.log('[Detection] face frame:', JSON.stringify(face.frame));
+            console.log('[Detection] landmarks:', JSON.stringify(face.landmarks));
+
             const { width: screenW, height: screenH } = viewSizeRef.current;
             const isFront = cameraPositionRef.current === 'front';
+            console.log('[Detection] screen:', screenW, 'x', screenH, 'isFront:', isFront);
 
             // VisionCamera reports raw sensor dims (may be landscape).
             // ML Kit reads EXIF and returns coords in display-oriented (portrait) space.
             const isRotated = photo.width > photo.height;
             const displayW = isRotated ? photo.height : photo.width;
             const displayH = isRotated ? photo.width : photo.height;
+            console.log(
+              '[Detection] isRotated:',
+              isRotated,
+              'displayW:',
+              displayW,
+              'displayH:',
+              displayH
+            );
 
             // Cover-fit: work out scale + crop offset so photo coords map to screen coords
             const scale =
@@ -264,6 +321,14 @@ export default function CameraScreen() {
                 : screenW / displayW; // photo taller than screen → letterbox top/bottom
             const offsetX = (displayW - screenW / scale) / 2;
             const offsetY = (displayH - screenH / scale) / 2;
+            console.log(
+              '[Detection] scale:',
+              scale.toFixed(4),
+              'offsetX:',
+              offsetX.toFixed(1),
+              'offsetY:',
+              offsetY.toFixed(1)
+            );
 
             const toScreenX = (rawX: number) => {
               // Mirror X for front camera (sensor is not pre-mirrored)
@@ -286,7 +351,16 @@ export default function CameraScreen() {
             // Forehead = halfway between the top of the face frame and the eyes
             const foreheadRawY = face.frame.top + (eyeY - face.frame.top) / 2;
 
-            setForehead({ x: toScreenX(rawX), y: toScreenY(foreheadRawY) });
+            const screenPos = { x: toScreenX(rawX), y: toScreenY(foreheadRawY) };
+            console.log(
+              '[Detection] rawX:',
+              rawX.toFixed(1),
+              'foreheadRawY:',
+              foreheadRawY.toFixed(1),
+              '→ screen:',
+              JSON.stringify(screenPos)
+            );
+            setForehead(screenPos);
           } catch (e) {
             const err = e as Record<string, unknown>;
             console.warn('[Camera] detection error:', err?.['code'], err?.['message']);
@@ -338,6 +412,7 @@ export default function CameraScreen() {
         style={StyleSheet.absoluteFill}
         device={device}
         photo
+        outputOrientation="device"
         isActive={isFocused && isCameraActive}
         onInitialized={() => {
           isCameraReadyRef.current = true;
