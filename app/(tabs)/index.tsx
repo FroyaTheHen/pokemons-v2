@@ -4,12 +4,13 @@ import { Image } from 'expo-image';
 import { Image as RNImage } from 'react-native';
 import heartSolid from '../../assets/icons/heart-solid.png';
 import { useContext } from 'react';
-import { usePokemonList } from '../../hooks/usePokemonList';
+import { usePokemonListContext } from '../../contexts/PokemonListContext';
 import { Pokemon } from '../../types/pokemon';
 import { PokemonListItem } from '../../components/PokemonListItem';
 import { useIsDark } from '../../contexts/ThemeContext';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { PokemonContext } from '../../contexts/FavouriteContext';
+import PokemonSearchBar from '../../components/SearchBar';
 
 function navigateToDetail(item: Pokemon) {
   router.push({
@@ -83,9 +84,14 @@ function FavouritePokemon() {
 }
 
 export default function Index() {
-  const { data, loading, loadingMore, error, hasMore, count, loadMore } = usePokemonList();
+  const { data, loading, error, count } = usePokemonListContext();
   const theme = useIsDark();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const [query, setQuery] = useState('');
+  const filteredData = useMemo(
+    () => data.filter((p) => p.name.includes(query.toLowerCase())),
+    [data, query]
+  );
 
   if (loading) {
     return (
@@ -102,9 +108,11 @@ export default function Index() {
       </View>
     );
   }
+
   return (
     <View style={styles.root}>
       <FavouritePokemon />
+      <PokemonSearchBar value={query} onChangeText={setQuery} />
       <View style={styles.pokeListContainer}>
         <View style={styles.row}>
           <Text style={styles.name}> Pokedex </Text>
@@ -113,15 +121,15 @@ export default function Index() {
           </Text>
         </View>
         <FlatList
-          data={data}
+          data={filteredData}
           keyExtractor={(item) => item.name}
           contentContainerStyle={styles.list}
           renderItem={({ item, index }) => (
             <PokemonListItem item={item} index={index} onPress={() => navigateToDetail(item)} />
           )}
-          onEndReached={hasMore ? loadMore : undefined}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={loadingMore ? <ActivityIndicator style={styles.footer} /> : null}
+          ListFooterComponent={
+            data.length !== count ? <ActivityIndicator style={styles.footer} /> : null
+          }
         />
       </View>
     </View>
@@ -171,6 +179,7 @@ const createStyles = (isDark: boolean) => {
       padding: 16,
     },
     pokeListContainer: {
+      flex: 1,
       backgroundColor: bg,
     },
     favouriteName: {
@@ -186,7 +195,7 @@ const createStyles = (isDark: boolean) => {
       borderWidth: 1,
       marginHorizontal: 15,
       marginVertical: 15,
-      borderColor: isDark ? '#aaaaaa' : '#c5c5c5',
+      borderColor: isDark ? '#5d5c5c' : '#c5c5c5',
     },
     favouritePokemon: {
       flexDirection: 'row',
@@ -232,7 +241,7 @@ const createStyles = (isDark: boolean) => {
       borderRadius: 8,
       backgroundColor: isDark ? '#1e1e1e' : '#ffffff',
       borderWidth: 1,
-      borderColor: isDark ? '#aaaaaa' : '#c5c5c5',
+      borderColor: isDark ? '#5d5c5c' : '#c5c5c5',
       padding: 10,
       alignItems: 'center',
       justifyContent: 'center',

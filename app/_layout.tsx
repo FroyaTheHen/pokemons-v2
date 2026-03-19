@@ -8,6 +8,7 @@ import { router } from 'expo-router';
 import settings from '../assets/icons/settings.png';
 import { PokmemonProvider } from '../contexts/FavouriteContext';
 import { PinProvider } from '../contexts/PinContext';
+import { PokemonListProvider } from '../contexts/PokemonListContext';
 
 function AppHeader() {
   const { theme } = useContext(ThemeContext)!;
@@ -47,7 +48,9 @@ export default function RootLayout() {
       <ThemeProvider>
         <PokmemonProvider>
           <PinProvider>
-            <AppNavigator />
+            <PokemonListProvider>
+              <AppNavigator />
+            </PokemonListProvider>
           </PinProvider>
         </PokmemonProvider>
       </ThemeProvider>

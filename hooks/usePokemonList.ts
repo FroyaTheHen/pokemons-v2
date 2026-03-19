@@ -93,6 +93,12 @@ export function usePokemonList(): Result {
     return () => controller.abort();
   }, [offset]);
 
+  useEffect(() => {
+    if (!state.loading && !state.loadingMore && state.hasMore) {
+      setOffset((prev) => prev + LIMIT);
+    }
+  }, [state.loading, state.loadingMore, state.hasMore]);
+
   const loadMore = useCallback(() => {
     if (state.loadingMore || !state.hasMore) return;
     setOffset((prev) => prev + LIMIT);

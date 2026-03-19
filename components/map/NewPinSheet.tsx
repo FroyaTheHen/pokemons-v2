@@ -8,22 +8,29 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { useIsDark } from '../../contexts/ThemeContext';
-import { usePokemonList } from '../../hooks/usePokemonList';
 import { Pokemon } from '../../types/pokemon';
+import PokemonSearchBar from '../../components/SearchBar';
 
 type Props = {
   coords: { latitude: number; longitude: number } | null;
   onClose: () => void;
   onSave: (pokemon: Pokemon) => void;
+  pokemonList: Pokemon[];
+  count: number;
 };
 
-export function NewPinSheet({ coords, onClose, onSave }: Props) {
+export function NewPinSheet({ coords, onClose, onSave, pokemonList, count }: Props) {
   const isDark = useIsDark();
   const styles = useMemo(() => createStyles(isDark), [isDark]);
-  const { data: pokemonList, loadMore, hasMore, loadingMore } = usePokemonList();
   const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
+  const [query, setQuery] = useState('');
+  const filteredData = useMemo(
+    () => pokemonList.filter((p) => p.name.includes(query.toLowerCase())),
+    [pokemonList, query]
+  );
 
   useEffect(() => {
     if (coords) setSelectedPokemon(null);
@@ -39,13 +46,15 @@ export function NewPinSheet({ coords, onClose, onSave }: Props) {
           <Text style={styles.sheetCoords}>
             {coords?.latitude.toFixed(5)}, {coords?.longitude.toFixed(5)}
           </Text>
+          <PokemonSearchBar value={query} onChangeText={setQuery} />
           <FlatList
-            data={pokemonList}
+            data={filteredData}
             keyExtractor={(item) => item.name}
             style={styles.pokemonList}
             keyboardShouldPersistTaps="handled"
-            onEndReached={() => hasMore && !loadingMore && loadMore()}
-            onEndReachedThreshold={0.3}
+            ListFooterComponent={
+              pokemonList.length !== count ? <ActivityIndicator style={styles.footer} /> : null
+            }
             renderItem={({ item, index }) => (
               <Pressable
                 style={[
@@ -139,7 +148,7 @@ const createStyles = (isDark: boolean) =>
     cancelButtonText: { color: isDark ? '#ffffff' : '#000000' },
     saveButton: { backgroundColor: '#007AFF' },
     primaryButtonText: { color: '#ffffff' },
-    pokemonList: { maxHeight: 200, marginBottom: 16 },
+    pokemonList: { height: 150, marginBottom: 16 },
     pokemonItem: {
       borderRadius: 8,
       paddingHorizontal: 14,
@@ -147,4 +156,7 @@ const createStyles = (isDark: boolean) =>
       marginBottom: 4,
     },
     pokemonItemText: { fontSize: 15, fontWeight: '500', textTransform: 'capitalize' },
+    footer: {
+      paddingVertical: 16,
+    },
   });
